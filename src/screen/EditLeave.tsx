@@ -20,7 +20,7 @@ const statusOptions: StatusOption[] = [
 ];
 
 const EditLeave: React.FC = ({route}: any) => {
-  const {token, item} = route.params;
+  const {data, item} = route.params;
   console.log(item, 'item-----');
 
   const [duration, setDuration] = useState<string>('');
@@ -35,7 +35,7 @@ const EditLeave: React.FC = ({route}: any) => {
           'https://ingress.bizcrmapp.com/api/v1/leave-type',
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${data?.data?.token}`,
               'Content-Type': 'application/json',
             },
           },
