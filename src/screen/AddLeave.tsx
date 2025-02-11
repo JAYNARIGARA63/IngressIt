@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {
   View,
@@ -5,8 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
+import {useNavigation} from '@react-navigation/native';
 
 interface StatusOption {
   label: string;
@@ -14,63 +18,86 @@ interface StatusOption {
 }
 
 const statusOptions: StatusOption[] = [
-  {label: 'Pending', value: 'Pending'},
-  {label: 'Success', value: 'Success'},
+  {label: 'Pending', value: 'pending'},
+  {label: 'Success', value: 'success'},
 ];
 
 const AddLeave: React.FC = ({route}: any) => {
-  const {token} = route.params;
+  const navigation = useNavigation<any>();
+  const BASE_URL = 'https://ingress.bizcrmapp.com';
+  const {data} = route.params;
+  console.log(data?.data?.token, '-----');
+
   const [duration, setDuration] = useState<string>('');
   const [reason, setReason] = useState<string | null>('');
   const [status, setStatus] = useState<string | null>(null);
   const [reasonOptions, setReasonOptions] = useState<any>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchReasons = async () => {
-      try {
-        const response = await fetch(
-          'https://ingress.bizcrmapp.com/api/v1/leave-type',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(data.data, 'data-----');
-
-        if (data) {
-          const formattedData = data?.data?.map((item: any) => ({
-            label: item.type_name,
-            value: item.id,
-          }));
-          setReasonOptions(formattedData);
-        } else {
-          console.error('Unexpected API response format:', data);
-        }
-      } catch (error) {
-        console.error('Error fetching reasons:', error);
-      }
-    };
-
     fetchReasons();
   }, []);
 
-  const handleSubmit = () => {
-    console.log({duration, reason, status});
+  const fetchReasons = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/v1/leave-type`, {
+        headers: {
+          Authorization: `Bearer ${data?.data?.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(response.data.data, 'data-----');
+
+      if (response.data) {
+        const formattedData = response.data?.data?.map((item: any) => ({
+          label: item.type_name,
+          value: item.id,
+        }));
+        setReasonOptions(formattedData);
+      } else {
+        console.error('Unexpected API response format:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching reasons:', error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!duration || !reason || !status) {
+      Alert.alert('Enter Details first');
+      return;
+    }
+    setLoading(true);
+    try {
+      const AddLeaveData = {
+        duration: duration,
+        reason: reason,
+        status: status,
+      };
+
+      const handleAddLeave = await axios.post(
+        `${BASE_URL}/api/v1/leave`,
+        AddLeaveData,
+        {
+          headers: {
+            Authorization: `Bearer ${data?.data?.token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      if (handleAddLeave.data) {
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Leave</Text>
-
       <Text style={styles.label}>Duration:</Text>
       <TextInput
         style={styles.input}
@@ -102,7 +129,11 @@ const AddLeave: React.FC = ({route}: any) => {
       />
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Add Leave</Text>
+        {loading ? (
+          <ActivityIndicator color={'#ffffff'} size={'small'} />
+        ) : (
+          <Text style={styles.submitButtonText}>Add Leave</Text>
+        )}
       </TouchableOpacity>
     </View>
   );

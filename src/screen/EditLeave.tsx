@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import axios from 'axios';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -18,33 +19,68 @@ const statusOptions: StatusOption[] = [
   {label: 'Success', value: 'Success'},
 ];
 
-const EditLeave: React.FC = () => {
-  const [duration, setDuration] = useState<string>('');
-  const [reason, setReason] = useState<string>('');
-  const [status, setStatus] = useState<string | null>(null);
+const EditLeave: React.FC = ({route}: any) => {
+  const {token, item} = route.params;
+  console.log(item, 'item-----');
 
-  const handleSubmit = () => {
-    console.log({duration, reason, status});
-  };
+  const [duration, setDuration] = useState<string>('');
+  const [reason, setReason] = useState<string | null>('');
+  const [status, setStatus] = useState<string | null>(null);
+  const [reasonOptions, setReasonOptions] = useState<any>([]);
+
+  useEffect(() => {
+    const fetchReasons = async () => {
+      try {
+        const response = await axios.get(
+          'https://ingress.bizcrmapp.com/api/v1/leave-type',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+
+        console.log(response.data.data, 'data-----');
+
+        if (response.data) {
+          const formattedData = response.data?.data?.map((item: any) => ({
+            label: item.type_name,
+            value: item.id,
+          }));
+          setReasonOptions(formattedData);
+        } else {
+          console.error('Unexpected API response format:', response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching reasons:', error);
+      }
+    };
+
+    fetchReasons();
+  }, []);
+
+  const handleSubmit = () => {};
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Edit Leave</Text>
-
       <Text style={styles.label}>Duration:</Text>
       <TextInput
         style={styles.input}
+        placeholder="Enter duration"
         value={duration}
         onChangeText={setDuration}
-        placeholder="Enter duration"
       />
 
       <Text style={styles.label}>Reason:</Text>
-      <TextInput
-        style={styles.input}
+      <Dropdown
+        style={styles.dropdown}
+        data={reasonOptions}
+        labelField="label"
+        valueField="value"
+        placeholder="Select Reason"
         value={reason}
-        onChangeText={setReason}
-        placeholder="Enter reason"
+        onChange={item => setReason(item.value)}
       />
 
       <Text style={styles.label}>Status:</Text>
@@ -59,7 +95,7 @@ const EditLeave: React.FC = () => {
       />
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Update Leave</Text>
+        <Text style={styles.submitButtonText}>Edit Leave</Text>
       </TouchableOpacity>
     </View>
   );

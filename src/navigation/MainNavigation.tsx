@@ -13,12 +13,24 @@ const MainNavigation = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
+        // screenOptions={{
+        //   headerShown: false,
+        // }}
         initialRouteName="Login">
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Leave" component={Leave} />
+        <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+          name="Login"
+          component={Login}
+        />
+        <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+          name="Leave"
+          component={Leave}
+        />
         <Stack.Screen name="AddLeave" component={AddLeave} />
         <Stack.Screen name="EditLeave" component={EditLeave} />
       </Stack.Navigator>

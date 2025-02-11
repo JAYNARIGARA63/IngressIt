@@ -17,33 +17,35 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log('press');
 
-    if (email == '' && password == '') {
+    if (email === '' || password === '') {
       Alert.alert('Enter Email and Password');
-    } else {
-      const data = {
-        email: email,
-        password: password,
-      };
-      setLoading(true);
+      return;
+    }
 
-      axios
-        .post('https://ingress.bizcrmapp.com/api/v1/auth/login', data)
-        .then((response: {data: any}) => {
-          console.log(response?.data);
-          if (response.data) {
-            navigation.navigate('Leave', {token: response?.data?.data?.token});
-          } else {
-            Alert.alert('try again!');
-          }
-          setLoading(false);
-        })
-        .catch((error: any) => {
-          Alert.alert(error);
-          setLoading(false);
-        });
+    const data = {
+      email: email,
+      password: password,
+    };
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        'https://ingress.bizcrmapp.com/api/v1/auth/login',
+        data,
+      );
+      console.log(response?.data);
+      if (response.data) {
+        navigation.navigate('Leave', {data: response?.data});
+      } else {
+        Alert.alert('Try again!');
+      }
+    } catch (error: any) {
+      Alert.alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
